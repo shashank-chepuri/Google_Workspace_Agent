@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace Agent - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            margin: 20px auto;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .permissions {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .permissions h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+
+        .permission-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .permission-item span {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            min-width: 24px;
+        }
+
+        .permission-item small {
+            color: #6c757d;
+            margin-left: 5px;
+            font-size: 0.8rem;
+        }
+
+        .google-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            color: #495057;
+            border: 2px solid #e9ecef;
+            padding: 14px 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .google-btn:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .footer {
+            color: #adb5bd;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 25px;
+            }
+            
+            .logo {
+                font-size: 3rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .permissions {
+                padding: 15px;
+            }
+            
+            .permission-item {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🤖</div>
+        <h1>Workspace Agent</h1>
+        <p class="subtitle">Your AI assistant for Google Workspace</p>
+        
+        <div class="permissions">
+            <h3>This app will have access to:</h3>
+            <div class="permission-item">
+                <span>📁</span> Google Drive <small>(read files)</small>
+            </div>
+            <div class="permission-item">
+                <span>📧</span> Gmail <small>(send emails)</small>
+            </div>
+            <div class="permission-item">
+                <span>📋</span> Google Tasks <small>(manage tasks)</small>
+            </div>
+            <div class="permission-item">
+                <span>📅</span> Google Calendar <small>(manage events & Meet)</small>
+            </div>
+            <div class="permission-item">
+                <span>📝</span> Google Docs/Sheets/Slides <small>(read content)</small>
+            </div>
+            <div class="permission-item">
+                <span>👤</span> Your profile info <small>(name, email, picture)</small>
+            </div>
+        </div>
+
+        <a href="/login" class="google-btn" onclick="handleLogin(event)">
+            <div class="btn-content">
+                <img src="https://www.google.com/favicon.ico" alt="Google">
+                <span>Continue with Google</span>
+                <div class="loader" id="loader"></div>
+            </div>
+        </a>
+
+        <div class="footer">
+            By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+            const btn = document.querySelector('.btn-content');
+            const loader = document.getElementById('loader');
+            const text = btn.querySelector('span');
+            
+            text.style.opacity = '0.7';
+            loader.style.display = 'inline-block';
+            
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 500);
+        }
+    </script>
+</body>
+</html>

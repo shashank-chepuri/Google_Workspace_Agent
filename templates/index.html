@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace Agent</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>🤖 Workspace Agent</h2>
+            
+            <div class="sidebar-section">
+                <h3>📋 TASKS</h3>
+                <div class="quick-action task-action" onclick="showTaskModal()">
+                    <h4>➕ Add Task</h4>
+                    <p>Create a new task with due date</p>
+                </div>
+                <div class="quick-action task-action" onclick="sendCommand('list tasks')">
+                    <h4>📋 List Tasks</h4>
+                    <p>View all pending and completed tasks</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📝 NOTES (KEEP)</h3>
+                <div class="quick-action note-action" onclick="showNoteModal()">
+                    <h4>➕ Create Note</h4>
+                    <p>Save a new note with title and content</p>
+                </div>
+                <div class="quick-action note-action" onclick="sendCommand('list notes')">
+                    <h4>📚 All Notes</h4>
+                    <p>Browse all your saved notes</p>
+                </div>
+                <div class="quick-action note-action" onclick="showNoteSearchModal()">
+                    <h4>🔍 Search Notes</h4>
+                    <p>Find notes by keyword</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📅 CALENDAR</h3>
+                <div class="quick-action calendar-action" onclick="showEventModal()">
+                    <h4>➕ Create Event</h4>
+                    <p>Schedule a new calendar event</p>
+                </div>
+                <div class="quick-action calendar-action" onclick="sendCommand('list events')">
+                    <h4>📅 Upcoming Events</h4>
+                    <p>View future calendar events</p>
+                </div>
+                <div class="quick-action calendar-action" onclick="sendCommand('list today')">
+                    <h4>📆 Today's Events</h4>
+                    <p>See what's scheduled for today</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>🎥 MEET</h3>
+                <div class="quick-action meet-action" onclick="showMeetModal()">
+                    <h4>➕ Schedule Meet</h4>
+                    <p>Create a Google Meet with link</p>
+                </div>
+                <div class="quick-action meet-action" onclick="showMeetInviteModal()">
+                    <h4>📧 Send Meet Invite</h4>
+                    <p>Email meeting invitation</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>🖼️ IMAGE GALLERY</h3>
+                <div class="quick-action image-action" onclick="sendCommand('show images')">
+                    <h4>🖼️ Show All Images</h4>
+                    <p>View all images in your Drive</p>
+                </div>
+                <div class="quick-action image-action" onclick="showImageSearchModal()">
+                    <h4>🔍 Find Image</h4>
+                    <p>Search for a specific image</p>
+                </div>
+                <div class="quick-action image-action" onclick="showFolderModal()">
+                    <h4>📂 View Folder</h4>
+                    <p>Browse images in a folder</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📧 EMAIL DRAFTS</h3>
+                <div class="quick-action file-action" onclick="showDraftModal()">
+                    <h4>📝 New Email</h4>
+                    <p>Create a new email draft</p>
+                </div>
+                <div class="quick-action file-action" onclick="sendCommand('show draft')">
+                    <h4>📋 Show Draft</h4>
+                    <p>View current draft</p>
+                </div>
+                <div class="quick-action file-action" onclick="sendCommand('clear draft')">
+                    <h4>🗑️ Clear Draft</h4>
+                    <p>Discard current draft</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📄 SUMMARY DRAFTS</h3>
+                <div class="quick-action summary-action" onclick="showSummaryModal()">
+                    <h4>📊 Draft Summary</h4>
+                    <p>Create a summary of a file</p>
+                </div>
+                <div class="quick-action summary-action" onclick="showSummaryWithEmailModal()">
+                    <h4>📤 Draft & Send Summary</h4>
+                    <p>Summarize and send to email</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📁 FILE OPERATIONS</h3>
+                <div class="quick-action file-action" onclick="sendCommand('list all files')">
+                    <h4>📁 List Files</h4>
+                    <p>Show all files in your Drive</p>
+                </div>
+                <div class="quick-action file-action" onclick="showFileSearchModal()">
+                    <h4>🔍 Search Files</h4>
+                    <p>Find files by name or keyword</p>
+                </div>
+                <div class="quick-action file-action" onclick="sendCommand('help')">
+                    <h4>❓ Help</h4>
+                    <p>Show available commands</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>✨ EXAMPLES</h3>
+                <div class="quick-action" onclick="sendCommand('add task: Buy groceries due: tomorrow')">
+                    <h4>📋 Add Task</h4>
+                    <p>add task: Buy groceries due: tomorrow</p>
+                </div>
+                <div class="quick-action" onclick="sendCommand('create note: Meeting Notes - Discuss project timeline')">
+                    <h4>📝 Create Note</h4>
+                    <p>create note: Meeting Notes - Discuss...</p>
+                </div>
+                <div class="quick-action" onclick="sendCommand('create event: Team sync on Friday at 2pm')">
+                    <h4>📅 Create Event</h4>
+                    <p>create event: Team sync on Friday at 2pm</p>
+                </div>
+                <div class="quick-action" onclick="sendCommand('schedule meet: Client call on Monday at 10am with client@email.com')">
+                    <h4>🎥 Schedule Meet</h4>
+                    <p>schedule meet: Client call on Monday...</p>
+                </div>
+                <div class="quick-action" onclick="sendCommand('show images')">
+                    <h4>🖼️ Show Images</h4>
+                    <p>show images</p>
+                </div>
+                <div class="quick-action" onclick="sendCommand('draft summary of quarterly_report.pdf')">
+                    <h4>📄 Draft Summary</h4>
+                    <p>draft summary of report.pdf</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <h1>🤖 Workspace Agent</h1>
+                    <p>Tasks • Notes • Calendar • Meet • Files • Images • Drafts</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <!-- Filters Dropdown -->
+                    <div class="dropdown filter-dropdown">
+                        <button class="dropdown-btn filter-btn" onclick="toggleDropdown('filterDropdown')">
+                            <i class="fas fa-filter"></i> <span>Filters</span>
+                        </button>
+                        <div id="filterDropdown" class="dropdown-content">
+                            <div class="dropdown-section">
+                                <div class="dropdown-section-title">📊 FILTERS</div>
+                                <a href="#" onclick="switchTab('all'); return false;" class="filter-option" data-tab="all">
+                                    <i class="fas fa-globe"></i> All
+                                </a>
+                                <a href="#" onclick="switchTab('tasks'); return false;" class="filter-option" data-tab="tasks">
+                                    <i class="fas fa-tasks"></i> Tasks
+                                </a>
+                                <a href="#" onclick="switchTab('notes'); return false;" class="filter-option" data-tab="notes">
+                                    <i class="fas fa-sticky-note"></i> Notes
+                                </a>
+                                <a href="#" onclick="switchTab('calendar'); return false;" class="filter-option" data-tab="calendar">
+                                    <i class="fas fa-calendar"></i> Calendar
+                                </a>
+                                <a href="#" onclick="switchTab('images'); return false;" class="filter-option" data-tab="images">
+                                    <i class="fas fa-image"></i> Images
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Friends Dropdown -->
+                    <div class="dropdown friends-dropdown">
+                        <button class="dropdown-btn friends-btn" onclick="toggleDropdown('friendsDropdown')">
+                            <i class="fas fa-users"></i> <span>Friends</span>
+                        </button>
+                        <div id="friendsDropdown" class="dropdown-content">
+                            <div class="dropdown-section">
+                                <div class="dropdown-section-title">👥 FRIENDS</div>
+                                <a href="#" onclick="showFriendsModal(); return false;">
+                                    <i class="fas fa-user-plus"></i> Manage Friends
+                                </a>
+                                <div class="friends-list-mini" id="friendsListMini">
+                                    <div style="padding: 8px; color: #6c757d; text-align: center;">Loading...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- History Button -->
+                    <a href="/history" class="history-btn" title="View History">
+                        <i class="fas fa-history"></i> <span>History</span>
+                    </a>
+                    
+                    <!-- User info and logout button -->
+                    <div class="user-menu" style="position: relative;">
+                        <button onclick="toggleUserMenu()" class="user-menu-btn">
+                            <img src="{{ user.picture }}" alt="Profile" class="user-avatar">
+                            <span class="user-name">{{ user.name }}</span>
+                            <i class="fas fa-chevron-down" style="font-size: 0.8rem; color: #6c757d;"></i>
+                        </button>
+                        <div id="userDropdown" class="user-dropdown">
+                            <div class="user-dropdown-header">
+                                <div class="user-dropdown-name">{{ user.name }}</div>
+                                <div class="user-dropdown-email">{{ user.email }}</div>
+                            </div>
+                            <a href="/logout" class="user-dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area" id="chatArea">
+                <div class="message bot-message">
+                    <div class="message-content" style="font-size: 0.9rem; line-height: 1.4;">
+                        <strong style="font-size: 1rem;">👋 Welcome!</strong><br>
+                        Try: "add task", "create note", "create event", "show images", or "help"
+                    </div>
+                    <div class="message-time">Just now</div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-container">
+                    <input type="text" id="commandInput" placeholder="Type your command... or click 🎤 to speak (Ctrl+M)" autocomplete="off">
+                    <button id="voiceBtn" class="voice-btn" title="Voice input (Ctrl+M)">🎤</button>
+                    <button id="sendButton">➤</button>
+                </div>
+                <div id="voiceStatus" class="voice-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Friends Modal -->
+    <div class="modal" id="friendsModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2>👥 Manage Friends</h2>
+            <p style="color: #6c757d; margin-bottom: 20px;">Map names to email addresses for easy commands</p>
+            
+            <!-- Add Friend Form -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px;">Add New Friend</h3>
+                <input type="text" id="friendName" placeholder="Name (e.g., Venkat)" style="margin-bottom: 10px; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;">
+                <input type="email" id="friendEmail" placeholder="Email address" style="margin-bottom: 10px; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;">
+                <div>
+                    <button class="btn-primary" onclick="addFriend()">Add Friend</button>
+                </div>
+            </div>
+            
+            <!-- Friends List -->
+            <h3>Your Friends</h3>
+            <div id="friendsList" style="max-height: 300px; overflow-y: auto;">
+                <div style="text-align: center; color: #6c757d; padding: 20px;">Loading...</div>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn-secondary" onclick="closeModal('friendsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <h2>📋 Add Task</h2>
+            <input type="text" id="taskText" placeholder="Task description">
+            <input type="text" id="taskDue" placeholder="Due date (e.g., tomorrow, 2024-12-31)">
+            <div>
+                <button class="btn-primary" onclick="addTask()">Add Task</button>
+                <button class="btn-secondary" onclick="closeModal('taskModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <h2>📝 Create Note</h2>
+            <input type="text" id="noteTitle" placeholder="Note title">
+            <textarea id="noteContent" placeholder="Note content" rows="5"></textarea>
+            <div>
+                <button class="btn-primary" onclick="createNote()">Create Note</button>
+                <button class="btn-secondary" onclick="closeModal('noteModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Search Modal -->
+    <div class="modal" id="noteSearchModal">
+        <div class="modal-content">
+            <h2>🔍 Search Notes</h2>
+            <input type="text" id="noteSearchKeyword" placeholder="Enter keyword">
+            <div>
+                <button class="btn-primary" onclick="searchNotes()">Search</button>
+                <button class="btn-secondary" onclick="closeModal('noteSearchModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2>📅 Create Event</h2>
+            <input type="text" id="eventTitle" placeholder="Event title">
+            <input type="text" id="eventDate" placeholder="Date (e.g., tomorrow, 2024-12-31)">
+            <input type="text" id="eventTime" placeholder="Time (e.g., 2pm, 14:30)">
+            <div>
+                <button class="btn-primary" onclick="createEvent()">Create Event</button>
+                <button class="btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meet Modal -->
+    <div class="modal" id="meetModal">
+        <div class="modal-content">
+            <h2>🎥 Schedule Meet</h2>
+            <input type="text" id="meetTitle" placeholder="Meeting title">
+            <input type="text" id="meetDate" placeholder="Date (e.g., tomorrow)">
+            <input type="text" id="meetTime" placeholder="Time (e.g., 2pm)">
+            <input type="text" id="meetAttendees" placeholder="Attendees (comma-separated emails)">
+            <div>
+                <button class="btn-primary" onclick="scheduleMeet()">Schedule</button>
+                <button class="btn-secondary" onclick="closeModal('meetModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meet Invite Modal -->
+    <div class="modal" id="meetInviteModal">
+        <div class="modal-content">
+            <h2>📧 Send Meet Invite</h2>
+            <input type="email" id="inviteEmail" placeholder="Recipient email">
+            <input type="text" id="inviteEvent" placeholder="Event title (optional)">
+            <div>
+                <button class="btn-primary" onclick="sendMeetInvite()">Send Invite</button>
+                <button class="btn-secondary" onclick="closeModal('meetInviteModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Search Modal -->
+    <div class="modal" id="imageSearchModal">
+        <div class="modal-content">
+            <h2>🖼️ Find Image</h2>
+            <input type="text" id="imageFileName" placeholder="Image name (e.g., vacation.jpg)">
+            <div>
+                <button class="btn-primary" onclick="searchImage()">Find Image</button>
+                <button class="btn-secondary" onclick="closeModal('imageSearchModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder View Modal -->
+    <div class="modal" id="folderModal">
+        <div class="modal-content">
+            <h2>📂 View Folder</h2>
+            <input type="text" id="folderName" placeholder="Folder name (e.g., Photos)">
+            <div>
+                <button class="btn-primary" onclick="viewFolder()">View Folder</button>
+                <button class="btn-secondary" onclick="closeModal('folderModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Search Modal -->
+    <div class="modal" id="fileSearchModal">
+        <div class="modal-content">
+            <h2>🔍 Search Files</h2>
+            <p style="color: #6c757d; margin-bottom: 15px;">Enter filename or keyword to search in Google Drive</p>
+            <input type="text" id="fileKeyword" placeholder="Enter filename or keyword" autocomplete="off" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid #e9ecef; border-radius: 8px;">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="searchFiles()" style="flex: 1;">Search</button>
+                <button class="btn-secondary" onclick="closeModal('fileSearchModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Draft Modal -->
+    <div class="modal" id="draftModal">
+        <div class="modal-content">
+            <h2>📝 Create Email Draft</h2>
+            <input type="text" id="draftPurpose" placeholder="Purpose (e.g., sick leave, meeting request)">
+            <input type="text" id="draftRecipient" placeholder="Who is this for? (manager, colleague, client)">
+            <textarea id="draftDetails" placeholder="Key details/dates/reason" rows="3"></textarea>
+            <select id="draftTone">
+                <option value="formal">Formal</option>
+                <option value="casual">Casual</option>
+                <option value="polite">Polite</option>
+                <option value="urgent">Urgent</option>
+            </select>
+            <div>
+                <button class="btn-primary" onclick="createDraft()">Create Draft</button>
+                <button class="btn-secondary" onclick="closeModal('draftModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Draft Modal -->
+    <div class="modal" id="summaryModal">
+        <div class="modal-content">
+            <h2>📄 Create Summary Draft</h2>
+            <p style="color: #6c757d; margin-bottom: 15px;">Enter a filename or select from your recent files</p>
+            
+            <input type="text" id="summaryFileName" placeholder="File name (e.g., report.pdf)" autocomplete="off">
+            
+            <div style="margin: 15px 0;">
+                <button class="btn-secondary" onclick="searchFilesForSummary()" style="width: 100%;">🔍 Search Files</button>
+            </div>
+            
+            <div id="fileSearchResults" style="display: none;">
+                <h3>Select a file:</h3>
+                <div id="fileList" class="file-selector"></div>
+            </div>
+            
+            <div>
+                <button class="btn-primary" onclick="createSummaryDraft()">Create Summary Draft</button>
+                <button class="btn-secondary" onclick="closeModal('summaryModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary with Email Modal -->
+    <div class="modal" id="summaryEmailModal">
+        <div class="modal-content">
+            <h2>📤 Draft & Send Summary</h2>
+            <p style="color: #6c757d; margin-bottom: 15px;">Create a summary and send it via email</p>
+            
+            <input type="text" id="summaryEmailFileName" placeholder="File name (e.g., report.pdf)">
+            <input type="email" id="summaryEmailRecipient" placeholder="Recipient email">
+            
+            <div style="margin: 15px 0;">
+                <button class="btn-secondary" onclick="searchFilesForSummaryEmail()" style="width: 100%;">🔍 Search Files</button>
+            </div>
+            
+            <div id="fileSearchResultsEmail" style="display: none;">
+                <h3>Select a file:</h3>
+                <div id="fileListEmail" class="file-selector"></div>
+            </div>
+            
+            <div>
+                <button class="btn-success" onclick="createAndSendSummary()">Create & Send</button>
+                <button class="btn-secondary" onclick="closeModal('summaryEmailModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipients Modal -->
+    <div class="modal" id="recipientsModal">
+        <div class="modal-content">
+            <h2>📧 Send Draft</h2>
+            <input type="text" id="recipientsInput" placeholder="Enter email addresses (comma-separated)">
+            <div>
+                <button class="btn-primary" onclick="sendWithRecipients()">Send</button>
+                <button class="btn-secondary" onclick="closeModal('recipientsModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
