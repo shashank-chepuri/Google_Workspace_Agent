@@ -1,7 +1,8 @@
-﻿flask==3.0.3
+flask==3.0.3
 flask-socketio==5.3.4
 python-socketio==5.11.2
-eventlet==0.36.1
+gevent==24.11.1
+gevent-websocket==0.10.1
 gunicorn==21.2.0
 python-dotenv==1.0.0
 cohere==5.13.4
@@ -18,4 +19,3 @@ tzlocal==5.2
 pytz==2024.1
 gtts==2.3.2
 requests==2.31.0
-

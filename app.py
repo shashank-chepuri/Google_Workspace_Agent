@@ -129,7 +129,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.profile"
 ]
 
-CLIENT_SECRETS_FILE = "credentials.json"
+# REMOVED: CLIENT_SECRETS_FILE = "credentials.json"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # For development only
 
 # Initialize services (will be set after login)
@@ -191,14 +191,37 @@ def parse_json(data):
     """Convert MongoDB ObjectId to string for JSON serialization."""
     return json.loads(dumps(data))
 
+# ===== UPDATED: get_flow function using environment variables =====
 def get_flow():
-    """Create and return a Google OAuth flow instance."""
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
-        scopes=SCOPES,
-        redirect_uri=url_for('oauth2callback', _external=True)
+    """Create and return a Google OAuth flow instance using environment variables."""
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+    project_id = os.getenv('GOOGLE_PROJECT_ID', '')
+    
+    if not client_id or not client_secret:
+        print("❌ GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set in environment")
+        return None
+    
+    # Create flow from client config (not from file)
+    client_config = {
+        "web": {
+            "client_id": client_id,
+            "project_id": project_id,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_secret": client_secret,
+            "redirect_uris": [url_for('oauth2callback', _external=True)],
+        }
+    }
+    
+    flow = Flow.from_client_config(
+        client_config,
+        scopes=SCOPES
     )
+    flow.redirect_uri = url_for('oauth2callback', _external=True)
     return flow
+# ==================================================================
 
 @app.route('/')
 def index():
@@ -220,6 +243,9 @@ def history_page():
 def login():
     """Initiate Google OAuth login."""
     flow = get_flow()
+    if flow is None:
+        return jsonify({'error': 'OAuth configuration missing'}), 500
+        
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
@@ -233,6 +259,9 @@ def oauth2callback():
     """Handle the OAuth callback."""
     try:
         flow = get_flow()
+        if flow is None:
+            return jsonify({'error': 'OAuth configuration missing'}), 500
+            
         flow.fetch_token(authorization_response=request.url)
         
         if not session['state'] == request.args['state']:
@@ -314,7 +343,7 @@ def logout():
     return redirect(url_for('index'))
 
 # ========== FRIENDS API ENDPOINTS ==========
-
+# (All your existing friends endpoints remain exactly the same)
 @app.route('/api/friends', methods=['GET'])
 def get_friends():
     """Get all friends for current user."""
@@ -423,7 +452,6 @@ def search_friends():
     return jsonify({'success': True, 'data': results})
 
 # ========== HISTORY API ENDPOINTS ==========
-
 @app.route('/api/history', methods=['GET'])
 def get_history():
     """Get user's command history."""
@@ -500,7 +528,6 @@ def mongodb_status():
     })
 
 # ========== VOICE ENDPOINTS ==========
-
 @socketio.on('connect')
 def handle_connect():
     print('🎤 Voice client connected')
@@ -550,7 +577,6 @@ def text_to_speech():
         return jsonify({'error': str(e)}), 500
 
 # ========== COMMAND HANDLING ==========
-
 @app.route('/api/command', methods=['POST'])
 def handle_command():
     data = request.json
@@ -700,7 +726,6 @@ def handle_command():
         return jsonify(error_response)
 
 # ========== USER INFO ENDPOINTS ==========
-
 @app.route('/api/user')
 def get_user():
     session.permanent = True
@@ -821,6 +846,7 @@ if __name__ == '__main__':
     print(f"📍 Port: {port}")
     print(f"📍 MongoDB: {'✅ Connected' if friend_model is not None else '❌ Disconnected'}")
     print(f"📍 SocketIO Mode: threading")
+    print(f"📍 OAuth Mode: Environment Variables")
     print("=" * 60)
     
     # IMPORTANT: debug must be False in production
