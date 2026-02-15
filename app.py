@@ -98,8 +98,8 @@ except Exception as e:
     history_model = None
 # =================================
 
-# Initialize SocketIO for voice
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Initialize SocketIO for voice - using threading mode for Render compatibility
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Google OAuth Configuration - Same scopes as your auth.py
 SCOPES = [
@@ -811,8 +811,6 @@ def get_help_text():
 • <code>exit</code> - Close the application<br>
 """
 
-# At the bottom of your app.py, replace the existing run block with:
-
 if __name__ == '__main__':
     # Get port from environment variable (Render sets this automatically)
     port = int(os.environ.get('PORT', 5000))
@@ -822,6 +820,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print(f"📍 Port: {port}")
     print(f"📍 MongoDB: {'✅ Connected' if friend_model is not None else '❌ Disconnected'}")
+    print(f"📍 SocketIO Mode: threading")
     print("=" * 60)
     
     # IMPORTANT: debug must be False in production
