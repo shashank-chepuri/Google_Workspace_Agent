@@ -101,7 +101,7 @@ except Exception as e:
 # Initialize SocketIO for voice - using threading mode for Render compatibility
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
-# Google OAuth Configuration - Same scopes as your auth.py
+# Google OAuth Configuration - COMPREHENSIVE SCOPES INCLUDING ALL NEEDED
 SCOPES = [
     # Drive scopes
     "https://www.googleapis.com/auth/drive.readonly",
@@ -109,10 +109,12 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly",
     "https://www.googleapis.com/auth/presentations.readonly",
     
-    # Gmail scopes
+    # Gmail scopes - INCLUDING the ones causing the error
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.compose",
     "https://www.googleapis.com/auth/gmail.modify",
+    "https://mail.google.com/",  # Added to match the error
+    "https://www.googleapis.com/auth/gmail.readonly",  # Added to match the error
     
     # Tasks scopes
     "https://www.googleapis.com/auth/tasks",
@@ -142,6 +144,16 @@ calendar_handler = None
 meet_handler = None
 file_handler = None
 draft_handler = DraftHandler()
+
+# ===== CLEAN UP TOKEN ON STARTUP =====
+# Clean up token.json on startup to force fresh authentication
+if os.path.exists('token.json'):
+    try:
+        os.remove('token.json')
+        print("🧹 Removed old token.json to force fresh authentication")
+    except Exception as e:
+        print(f"⚠️ Could not remove token.json: {e}")
+# =====================================
 
 # ===== FRIEND RESOLVER HELPER FUNCTION =====
 def resolve_friend_names(command, user_id, friend_model):
@@ -241,7 +253,7 @@ def history_page():
 
 @app.route('/login')
 def login():
-    """Initiate Google OAuth login."""
+    """Initiate Google OAuth login with forced consent for scope changes."""
     flow = get_flow()
     if flow is None:
         return jsonify({'error': 'OAuth configuration missing'}), 500
@@ -249,7 +261,7 @@ def login():
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'
+        prompt='consent'  # Always force consent to handle scope changes
     )
     session['state'] = state
     return redirect(authorization_url)
@@ -342,8 +354,29 @@ def logout():
         print("✅ Token file removed")
     return redirect(url_for('index'))
 
+@app.route('/api/reauthenticate')
+def reauthenticate():
+    """Force re-authentication when scopes have changed."""
+    if 'user' in session:
+        # Clear credentials to force re-auth
+        session.pop('credentials', None)
+        if os.path.exists('token.json'):
+            os.remove('token.json')
+    
+    # Redirect to login with force consent
+    flow = get_flow()
+    if flow is None:
+        return jsonify({'error': 'OAuth configuration missing'}), 500
+        
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='consent select_account'  # Force consent and account selection
+    )
+    session['state'] = state
+    return redirect(authorization_url)
+
 # ========== FRIENDS API ENDPOINTS ==========
-# (All your existing friends endpoints remain exactly the same)
 @app.route('/api/friends', methods=['GET'])
 def get_friends():
     """Get all friends for current user."""
@@ -616,80 +649,95 @@ def handle_command():
         
         response_data = None
         
-        # Route to appropriate handler
-        if action == 'exit':
-            response_data = {'success': True, 'action': 'exit', 'message': 'Goodbye!'}
-        
-        elif action == 'help':
-            response_data = {
-                'success': True, 
-                'action': 'help', 
-                'message': get_help_text()
-            }
-        
-        elif action in ['list_tasks', 'add_task', 'complete_task', 'delete_task']:
-            response_data = task_handler.handle(action, parsed, command)
-        
-        elif action in ['list_notes', 'create_note', 'get_note', 'delete_note', 'search_notes']:
-            response_data = note_handler.handle(action, parsed, command)
-        
-        elif action in ['list_events', 'create_event', 'get_event', 'delete_event', 'list_today', 'list_date']:
-            if calendar_handler:
-                response_data = calendar_handler.handle(action, parsed, command)
+        # Route to appropriate handler with error handling for scope issues
+        try:
+            if action == 'exit':
+                response_data = {'success': True, 'action': 'exit', 'message': 'Goodbye!'}
+            
+            elif action == 'help':
+                response_data = {
+                    'success': True, 
+                    'action': 'help', 
+                    'message': get_help_text()
+                }
+            
+            elif action in ['list_tasks', 'add_task', 'complete_task', 'delete_task']:
+                response_data = task_handler.handle(action, parsed, command)
+            
+            elif action in ['list_notes', 'create_note', 'get_note', 'delete_note', 'search_notes']:
+                response_data = note_handler.handle(action, parsed, command)
+            
+            elif action in ['list_events', 'create_event', 'get_event', 'delete_event', 'list_today', 'list_date']:
+                if calendar_handler:
+                    response_data = calendar_handler.handle(action, parsed, command)
+                else:
+                    response_data = {'success': False, 'message': 'Calendar service not available'}
+            
+            elif action in ['schedule_meet', 'send_meet_invite']:
+                if meet_handler:
+                    response_data = meet_handler.handle(action, parsed, command, draft_handler, google_services.get('gmail'))
+                else:
+                    response_data = {'success': False, 'message': 'Meet service not available'}
+            
+            # File operations - with special handling for search
+            elif action in ['list_files', 'search_files', 'show_images', 'show_image', 'view_folder']:
+                if file_handler:
+                    # For search_files, ensure we have a proper parsed dictionary
+                    if action == 'search_files':
+                        # Make sure parsed has the keyword
+                        if isinstance(parsed, dict) and 'keyword' not in parsed:
+                            # Try to extract keyword from command
+                            words = command.split()
+                            if len(words) > 1:
+                                # Remove the first word (search/find)
+                                keyword = ' '.join(words[1:]).strip()
+                                parsed['keyword'] = keyword
+                            else:
+                                response_data = {'success': False, 'message': 'Please provide a search keyword'}
+                                # Log to history
+                                if history_model is not None:
+                                    history_model.log(
+                                        user_id=user_id,
+                                        user_name=user_name,
+                                        command=command,
+                                        response='Please provide a search keyword',
+                                        action='search_files',
+                                        success=False
+                                    )
+                                return jsonify(response_data)
+                    
+                    response_data = file_handler.handle(action, parsed, command)
+                else:
+                    response_data = {'success': False, 'message': 'File service not available'}
+            
+            elif action in ['draft_email', 'draft_summary', 'show_draft', 'clear_draft', 'refine_draft', 'send_draft']:
+                response_data = draft_handler.handle(action, parsed, command, co, google_services.get('gmail'))
+            
+            elif action == 'summarize_file':
+                if file_handler:
+                    response_data = file_handler.handle_summarize(parsed, command)
+                else:
+                    response_data = {'success': False, 'message': 'File service not available'}
+            
             else:
-                response_data = {'success': False, 'message': 'Calendar service not available'}
+                response_data = {
+                    'success': False,
+                    'message': 'Command not recognized. Try "help"'
+                }
         
-        elif action in ['schedule_meet', 'send_meet_invite']:
-            if meet_handler:
-                response_data = meet_handler.handle(action, parsed, command, draft_handler, google_services.get('gmail'))
+        except Exception as e:
+            # Check if it's a scope-related error
+            error_str = str(e)
+            if 'Scope has changed' in error_str or 'unauthorized_client' in error_str or 'access_denied' in error_str:
+                response_data = {
+                    'success': False,
+                    'message': 'Your permissions have changed. Please re-authenticate.',
+                    'action': 'reauthenticate',
+                    'requires_reauth': True
+                }
             else:
-                response_data = {'success': False, 'message': 'Meet service not available'}
-        
-        # File operations - with special handling for search
-        elif action in ['list_files', 'search_files', 'show_images', 'show_image', 'view_folder']:
-            if file_handler:
-                # For search_files, ensure we have a proper parsed dictionary
-                if action == 'search_files':
-                    # Make sure parsed has the keyword
-                    if isinstance(parsed, dict) and 'keyword' not in parsed:
-                        # Try to extract keyword from command
-                        words = command.split()
-                        if len(words) > 1:
-                            # Remove the first word (search/find)
-                            keyword = ' '.join(words[1:]).strip()
-                            parsed['keyword'] = keyword
-                        else:
-                            response_data = {'success': False, 'message': 'Please provide a search keyword'}
-                            # Log to history
-                            if history_model is not None:
-                                history_model.log(
-                                    user_id=user_id,
-                                    user_name=user_name,
-                                    command=command,
-                                    response='Please provide a search keyword',
-                                    action='search_files',
-                                    success=False
-                                )
-                            return jsonify(response_data)
-                
-                response_data = file_handler.handle(action, parsed, command)
-            else:
-                response_data = {'success': False, 'message': 'File service not available'}
-        
-        elif action in ['draft_email', 'draft_summary', 'show_draft', 'clear_draft', 'refine_draft', 'send_draft']:
-            response_data = draft_handler.handle(action, parsed, command, co, google_services.get('gmail'))
-        
-        elif action == 'summarize_file':
-            if file_handler:
-                response_data = file_handler.handle_summarize(parsed, command)
-            else:
-                response_data = {'success': False, 'message': 'File service not available'}
-        
-        else:
-            response_data = {
-                'success': False,
-                'message': 'Command not recognized. Try "help"'
-            }
+                # Re-raise other errors to be caught by outer try-except
+                raise e
         
         # Log to history
         if history_model is not None:
@@ -707,10 +755,21 @@ def handle_command():
             
     except Exception as e:
         traceback.print_exc()
-        error_response = {
-            'success': False,
-            'message': f'Unexpected error: {str(e)}'
-        }
+        
+        # Check if it's a scope-related error
+        error_str = str(e)
+        if 'Scope has changed' in error_str:
+            error_response = {
+                'success': False,
+                'message': 'Your permissions have changed. Please re-authenticate.',
+                'action': 'reauthenticate',
+                'requires_reauth': True
+            }
+        else:
+            error_response = {
+                'success': False,
+                'message': f'Unexpected error: {str(e)}'
+            }
         
         if 'user' in session and history_model is not None:
             history_model.log(
@@ -847,6 +906,7 @@ if __name__ == '__main__':
     print(f"📍 MongoDB: {'✅ Connected' if friend_model is not None else '❌ Disconnected'}")
     print(f"📍 SocketIO Mode: threading")
     print(f"📍 OAuth Mode: Environment Variables")
+    print(f"📍 Scopes: {len(SCOPES)} scopes configured")
     print("=" * 60)
     
     # IMPORTANT: debug must be False in production
